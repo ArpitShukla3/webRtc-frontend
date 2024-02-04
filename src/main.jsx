@@ -6,8 +6,6 @@ import ChatProvider from './Context/ChatProvider.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ChatProvider>
-  <React.StrictMode>
     <App />
-  </React.StrictMode>
   </ChatProvider>
 )
