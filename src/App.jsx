@@ -145,7 +145,7 @@ async function Receive(offerRcvd){
 useEffect(()=>
 {
    playVideoFromCamera();
-  socket = io('http://192.168.241.216:4000/')
+  socket = io('https://web-rtc-backend.onrender.com/')
   socket.emit("connection");
   socket.emit('join',id);
   socket.on("send",(payload)=>{
