@@ -29,22 +29,28 @@ async function playRemoteVideo(stream)
 }
 const configuration = {
     mandatory: {
-        OfferToReceiveAudio: true
+        OfferToReceiveAudio: true,
+        offerToReceiveVideo:true
     },
   iceServers:[{"urls":"stun:stun.l.google.com:19302"}]
 }
 async function Connect()
 {
-    await playVideoFromCamera();
+  
      peerConnection= new RTCPeerConnection(configuration);
 
+
+
     //play mediastream from other peerconncection
-    const videoElement = document.querySelector('video#remoteVideo');
-    peerConnection.addEventListener('track', async (event) => {
+       const videoElement = document.querySelector('video#remoteVideo');
+       peerConnection.ontrack=async(event)=>{
         const [remoteStream] = event.streams;
-        console.log(remoteStream,"remoteStream")
+        console.log(remoteStream.getTracks(),"remoteStream")
         videoElement.srcObject = remoteStream;
-    });
+    }
+
+
+    //play mediastream from other peerconnection
 
     //print message once connection is established
     peerConnection.addEventListener('connectionstatechange', event => {
@@ -55,6 +61,7 @@ async function Connect()
   });
     //adding localStream tracks on peerconnection
     localStream.getTracks().forEach((track)=>{
+      console.log("sending",track);
       peerConnection.addTrack(track,localStream);
     })
     
@@ -77,7 +84,7 @@ async function Connect()
   //creating offer, paramerter is because chrome 39 has updated something which has affected this
     const offer=await peerConnection.createOffer( {
       offerToReceiveAudio: 1,
-      offerToReceiveVideo: 0
+      offerToReceiveVideo: 1
     })
 
     //setLoacaldesc from offer
@@ -98,7 +105,10 @@ async function Connect()
 async function Receive(offerRcvd){
             // playVideoFromCamera();
            peerConnection = new RTCPeerConnection(configuration);
-          
+           localStream.getTracks().forEach((track)=>{
+            console.log(localStream.getTracks())
+            peerConnection.addTrack(track,localStream);
+            }) 
           peerConnection.addEventListener('connectionstatechange', async (event) => {
             if (peerConnection.connectionState === 'connected') {
                 console.log("Connected");
@@ -106,8 +116,9 @@ async function Receive(offerRcvd){
         });
           const remoteVideo = document.querySelector('#remoteVideo');
 
-peerConnection.addEventListener('track', async (event) => {
+           peerConnection.addEventListener('track', async (event) => {
     const [remoteStream] = event.streams;
+    console.log(remoteStream,"stream from receiver");
     remoteVideo.srcObject = remoteStream;
 });
           socket.on("iceSend",(payload)=>{
@@ -124,11 +135,8 @@ peerConnection.addEventListener('track', async (event) => {
           })
          
           peerConnection.setRemoteDescription(new RTCSessionDescription(offerRcvd));
-          await playVideoFromCamera();
-          localStream.getTracks().forEach((track)=>{
-            console.log(track)
-            peerConnection.addTrack(track,localStream);
-            }) 
+          // await playVideoFromCamera();
+         
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
           socket.emit("send",{"answer":answer,"id":id});
@@ -136,7 +144,8 @@ peerConnection.addEventListener('track', async (event) => {
 
 useEffect(()=>
 {
-  socket = io('http://localhost:3000/')
+   playVideoFromCamera();
+  socket = io('http://192.168.241.216:4000/')
   socket.emit("connection");
   socket.emit('join',id);
   socket.on("send",(payload)=>{
@@ -155,8 +164,8 @@ useEffect(()=>
   })
 return (
     <div>
-    <video id="localVideo" height={"100px"} width={"100px"} autoPlay playsInline muted />
-    <video id="remoteVideo" height={"100px"} width={"100px  "} autoPlay playsInline muted />
+    <video id="localVideo" height={"200px"} width={"200px"} autoPlay playsInline muted />
+    <video id="remoteVideo" height={"200px"} width={"200px  "} autoPlay playsInline muted />
     <button onClick={Connect} className="bg-orange-300 m-4 p-2">Connect</button>
     <button
     className="bg-sky-400 m-4 p-2"
