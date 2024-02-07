@@ -6,10 +6,30 @@ let remoteStream;
 let peerConnection
 function App() {
   const [offerRcvd,setOfferRcvd]=useState();
-  const id=234;
+  const [id, setID] = useState("");
+  const [joined,setJoined] =useState(false);
+  function Hangup(){
+
+    peerConnection&&peerConnection.close();
+  }
+  function join_Room()
+  {
+    socket.emit('join',id);
+    socket.on("send",(payload)=>{
+      if (payload.offer&&confirm("Do you want to accept the offer")) {
+        const offer=payload.offer;
+        try {
+          Receive(offer)
+        } catch (error) {
+          console.log("error",error.message);
+        }
+         }
+     })
+     setJoined(true);
+  }
 async function playVideoFromCamera() {
     try {
-        const constraints = {'video': true, 'audio': true};
+        const constraints = {video: true, audio: true};
         localStream = await navigator.mediaDevices.getUserMedia(constraints);
         const videoElement = document.querySelector('video#localVideo');
         videoElement.srcObject = localStream;
@@ -45,7 +65,6 @@ async function Connect()
        const videoElement = document.querySelector('video#remoteVideo');
        peerConnection.ontrack=async(event)=>{
         const [remoteStream] = event.streams;
-        console.log(remoteStream.getTracks(),"remoteStream")
         videoElement.srcObject = remoteStream;
     }
 
@@ -61,7 +80,6 @@ async function Connect()
   });
     //adding localStream tracks on peerconnection
     localStream.getTracks().forEach((track)=>{
-      console.log("sending",track);
       peerConnection.addTrack(track,localStream);
     })
     
@@ -145,33 +163,27 @@ async function Receive(offerRcvd){
 useEffect(()=>
 {
    playVideoFromCamera();
+  // socket = io('http://localhost:5000');
   socket = io('https://web-rtc-backend.onrender.com/')
   socket.emit("connection");
-  socket.emit('join',id);
-  socket.on("send",(payload)=>{
-    if (payload.offer&&confirm("Do you want to accept the offer")) {
-      const offer=payload.offer;
-      try {
-        Receive(offer)
-      } catch (error) {
-        console.log("error",error.message);
-      }
-       }
-   })
 },[])
-  useEffect(()=>{
-    console.log("peerConnection chenged");
-  })
 return (
     <div>
     <video id="localVideo" height={"200px"} width={"200px"} autoPlay playsInline muted />
     <video id="remoteVideo" height={"200px"} width={"200px  "} autoPlay playsInline muted />
-    <button onClick={Connect} className="bg-orange-300 m-4 p-2">Connect</button>
+    <input
+    type="text"
+    value={id}
+    onChange={e => setID(e.target.value)}
+    placeholder="Your room..."
+    />
+   {(!joined)? <button  onClick={join_Room} className="bg-orange-300 m-4 p-2">join Room</button>:
+    <button onClick={Connect} className="bg-orange-300 m-4 p-2">Connect</button>}
     <button
     className="bg-sky-400 m-4 p-2"
-    onClick={Receive}
+    onClick={Hangup}
     >
-      Receive call
+      Hangup
     </button>
     </div>
   )
