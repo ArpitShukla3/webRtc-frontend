@@ -9,7 +9,9 @@ function App() {
   const [id, setID] = useState("");
   const [joined,setJoined] =useState(false);
   function Hangup(){
-
+    socket.emit("hangup",{id:id});
+    const videoElement = document.querySelector('video#remoteVideo');
+    videoElement.srcObject=undefined;
     peerConnection&&peerConnection.close();
   }
   function join_Room()
@@ -29,7 +31,7 @@ function App() {
   }
 async function playVideoFromCamera() {
     try {
-        const constraints = {video: true, audio: true};
+        const constraints = {audio:true,video: true};
         localStream = await navigator.mediaDevices.getUserMedia(constraints);
         const videoElement = document.querySelector('video#localVideo');
         videoElement.srcObject = localStream;
@@ -49,16 +51,21 @@ async function playRemoteVideo(stream)
 }
 const configuration = {
     mandatory: {
-        OfferToReceiveAudio: true,
-        offerToReceiveVideo:true
+        OfferToReceiveAudio: 1,
+        offerToReceiveVideo:1
     },
-  iceServers:[{"urls":"stun:stun.l.google.com:19302"}]
+  iceServers:[{"urls":"stun:stun2.l.google.com:19302"}]
 }
 async function Connect()
 {
   
      peerConnection= new RTCPeerConnection(configuration);
-
+     socket.on("hangup",()=>{
+      console.log("haundgv")
+      const videoElement = document.querySelector('video#remoteVideo');
+      videoElement.srcObject=undefined;
+      peerConnection.close();
+    })
 
 
     //play mediastream from other peerconncection
@@ -171,12 +178,12 @@ return (
     <div>
     <video id="localVideo" height={"200px"} width={"200px"} autoPlay playsInline muted />
     <video id="remoteVideo" height={"200px"} width={"200px  "} autoPlay playsInline muted />
-    <input
+   { !joined && <input
     type="text"
     value={id}
     onChange={e => setID(e.target.value)}
     placeholder="Your room..."
-    />
+    />}
    {(!joined)? <button  onClick={join_Room} className="bg-orange-300 m-4 p-2">join Room</button>:
     <button onClick={Connect} className="bg-orange-300 m-4 p-2">Connect</button>}
     <button
