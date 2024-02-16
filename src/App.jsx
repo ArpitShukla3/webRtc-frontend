@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
+import toast, { Toaster } from 'react-hot-toast';
 var socket;
 let localStream ;
 let remoteStream;
@@ -16,6 +17,11 @@ function App() {
   }
   function join_Room()
   {
+    if(!id)
+    {
+      toast.error("Enter valid room deatils");
+      return;
+    }
     socket.emit('join',id);
     socket.on("send",(payload)=>{
       if (payload.offer&&confirm("Do you want to accept the offer")) {
@@ -58,7 +64,7 @@ const configuration = {
 }
 async function Connect()
 {
-  
+    toast.success("Offer has been sent")
      peerConnection= new RTCPeerConnection(configuration);
      socket.on("hangup",()=>{
       console.log("haundgv")
@@ -173,25 +179,42 @@ useEffect(()=>
   // socket = io('http://localhost:5000');
   socket = io('https://web-rtc-backend.onrender.com/')
   socket.emit("connection");
+  return ()=>{
+    socket.off("connection");
+    socket.off("hangup",{id:id});
+    socket.off("send",{"answer":answer,"id":id});
+    socket.off("iceSend",{'iceOfReceiver': event.candidate,"id":id});
+    socket.off("iceSend",{'iceOfSender': event.candidate,"id":id});
+    socket.off('join',id);
+    socket.off("send",{'offer': offer,"id":id});
+  }
 },[])
 return (
     <div>
-    <video id="localVideo" height={"200px"} width={"200px"} autoPlay playsInline muted />
-    <video id="remoteVideo" height={"200px"} width={"200px  "} autoPlay playsInline muted />
-   { !joined && <input
+    <video id="localVideo" className="h-min" autoPlay playsInline muted />
+    <video id="remoteVideo" className="max-h-full" autoPlay playsInline muted />
+    { !joined &&  <div class="relative mt-6">
+  <input
     type="text"
+    placeholder="Enter Room .."
     value={id}
     onChange={e => setID(e.target.value)}
-    placeholder="Your room..."
-    />}
-   {(!joined)? <button  onClick={join_Room} className="bg-orange-300 m-4 p-2">join Room</button>:
-    <button onClick={Connect} className="bg-orange-300 m-4 p-2">Connect</button>}
-    <button
-    className="bg-sky-400 m-4 p-2"
-    onClick={Hangup}
-    >
+    className="block w-full rounded-2xl border border-neutral-300 bg-transparent py-4 pl-6 pr-20 text-base/6 text-neutral-950 ring-4 ring-transparent transition placeholder:text-neutral-500 focus:border-neutral-950 focus:outline-none focus:ring-neutral-950/5"
+  />
+  <div class="absolute inset-y-1 right-1 flex justify-end">
+  </div>
+</div>}
+
+   {(!joined)? <button  onClick={join_Room} className="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-500 before:to-blue-300 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0">join Room</button>:
+    <button onClick={Connect} className="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-500 before:to-blue-300 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0">Connect</button>}
+      
+      <button
+  className="relative px-8 py-2 rounded-md bg-white isolation-auto z-10 border-2 border-lime-500 before:absolute before:w-full before:transition-all before:duration-700 before:hover:w-full before:-left-full before:hover:left-0 before:rounded-full before:bg-lime-500 before:-z-10 before:aspect-square before:hover:scale-150 overflow-hidden before:hover:duration-700"
+  onClick={Hangup}
+>
       Hangup
     </button>
+    <Toaster/>
     </div>
   )
 }
