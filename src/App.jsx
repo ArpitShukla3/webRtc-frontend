@@ -37,8 +37,8 @@ function App() {
   }
 async function playVideoFromCamera() {
     try {
-        const constraints = {audio:true,video: true};
-        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const constraints = { video: true};
+        localStream = await navigator.mediaDevices.getUserMedia({video: true});
         const videoElement = document.querySelector('video#localVideo');
         videoElement.srcObject = localStream;
     } catch(error) {
@@ -114,7 +114,7 @@ async function Connect()
 
   //creating offer, paramerter is because chrome 39 has updated something which has affected this
     const offer=await peerConnection.createOffer( {
-      offerToReceiveAudio: 1,
+      offerToReceiveAudio: 0,
       offerToReceiveVideo: 1
     })
 
@@ -137,7 +137,6 @@ async function Receive(offerRcvd){
             // playVideoFromCamera();
            peerConnection = new RTCPeerConnection(configuration);
            localStream.getTracks().forEach((track)=>{
-            console.log(localStream.getTracks())
             peerConnection.addTrack(track,localStream);
             }) 
           peerConnection.addEventListener('connectionstatechange', async (event) => {
@@ -149,7 +148,6 @@ async function Receive(offerRcvd){
 
            peerConnection.addEventListener('track', async (event) => {
     const [remoteStream] = event.streams;
-    console.log(remoteStream,"stream from receiver");
     remoteVideo.srcObject = remoteStream;
 });
           socket.on("iceSend",(payload)=>{
@@ -176,8 +174,8 @@ async function Receive(offerRcvd){
 useEffect(()=>
 {
    playVideoFromCamera();
-  // socket = io('http://localhost:5000');
-  socket = io('https://web-rtc-backend.onrender.com/')
+  socket = io('http://localhost:5000');
+  // socket = io('https://web-rtc-backend.onrender.com/')
   socket.emit("connection");
   return ()=>{
     socket.off("connection");
