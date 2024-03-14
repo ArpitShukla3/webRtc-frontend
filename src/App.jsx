@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import toast, { Toaster } from 'react-hot-toast';
 var socket;
 let localStream ;
-let remoteStream;
 let peerConnection
 function App() {
-  const [offerRcvd,setOfferRcvd]=useState();
   const [id, setID] = useState("");
   const [joined,setJoined] =useState(false);
   function Hangup(){
@@ -37,7 +35,6 @@ function App() {
   }
 async function playVideoFromCamera() {
     try {
-        const constraints = { video: true};
         localStream = await navigator.mediaDevices.getUserMedia({video: true});
         const videoElement = document.querySelector('video#localVideo');
         videoElement.srcObject = localStream;
@@ -45,16 +42,16 @@ async function playVideoFromCamera() {
         console.error('Error opening video camera.', error);
     }
 }
-async function playRemoteVideo(stream)
-{
-  try {
-    const videoElement = document.querySelector('video#remoteVideo');
-    remoteStream=stream;
-    videoElement.srcObject = stream;
-  } catch (error) {
-    console.log(Error.message)
-  }
-}
+// async function playRemoteVideo(stream)
+// {
+//   try {
+//     const videoElement = document.querySelector('video#remoteVideo');
+//     remoteStream=stream;
+//     videoElement.srcObject = stream;
+//   } catch (error) {
+//     console.log(Error.message)
+//   }
+// }
 const configuration = {
     mandatory: {
         OfferToReceiveAudio: 1,
@@ -85,7 +82,7 @@ async function Connect()
     //play mediastream from other peerconnection
 
     //print message once connection is established
-    peerConnection.addEventListener('connectionstatechange', event => {
+    peerConnection.addEventListener('connectionstatechange', (event) => {
       if (peerConnection.connectionState === 'connected') {
           console.log("Connected");
           
@@ -174,24 +171,24 @@ async function Receive(offerRcvd){
 useEffect(()=>
 {
    playVideoFromCamera();
-  socket = io('http://localhost:5000');
-  // socket = io('https://web-rtc-backend.onrender.com/')
+  // socket = io('http://localhost:5000');
+  socket = io('https://web-rtc-backend.onrender.com/')
   socket.emit("connection");
   return ()=>{
     socket.off("connection");
-    socket.off("hangup",{id:id});
-    socket.off("send",{"answer":answer,"id":id});
-    socket.off("iceSend",{'iceOfReceiver': event.candidate,"id":id});
-    socket.off("iceSend",{'iceOfSender': event.candidate,"id":id});
-    socket.off('join',id);
-    socket.off("send",{'offer': offer,"id":id});
+    socket.off("hangup");
+    socket.off("send");
+    socket.off("iceSend");
+    socket.off("iceSend");
+    socket.off('join');
+    socket.off("send");
   }
 },[])
 return (
     <div>
     <video id="localVideo" className="h-min" autoPlay playsInline muted />
     <video id="remoteVideo" className="max-h-full" autoPlay playsInline muted />
-    { !joined &&  <div class="relative mt-6">
+    { !joined &&  <div className="relative mt-6">
   <input
     type="text"
     placeholder="Enter Room .."
@@ -199,7 +196,7 @@ return (
     onChange={e => setID(e.target.value)}
     className="block w-full rounded-2xl border border-neutral-300 bg-transparent py-4 pl-6 pr-20 text-base/6 text-neutral-950 ring-4 ring-transparent transition placeholder:text-neutral-500 focus:border-neutral-950 focus:outline-none focus:ring-neutral-950/5"
   />
-  <div class="absolute inset-y-1 right-1 flex justify-end">
+  <div className="absolute inset-y-1 right-1 flex justify-end">
   </div>
 </div>}
 
